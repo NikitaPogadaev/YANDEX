@@ -1,0 +1,55 @@
+   .intel_syntax noprefix
+
+    .text
+    .global avx_sin
+
+    # rdi = N, rsi = A, rdx = B, rcx = R
+avx_sin:
+    movsd xmm2, xmm0
+    movsd xmm3, xmm0 
+    movsd xmm4, xmm0
+    mov r8, 1
+    mov r9, 1
+    .Loop:
+        sub rdi, 8 # Смещаться будем по 8 элементов, начиная с конца
+        mov rax, 4
+        mul rdi
+        
+        inc r8
+        vmulsd xmm3, xmm3, xmm4
+        vcvtsi2sd xmm5, xmm5, r8
+        vdivsd xmm3, xmm3, xmm5
+        
+        inc r8
+        vmulsd xmm3, xmm3, xmm4
+        vcvtsi2sd xmm5, xmm5, r8
+        vdivsd xmm3, xmm3, xmm5
+        
+        cmp r9, 1
+        je neg
+        
+        cmp r9, 0
+        je pos
+
+        
+        neg:
+            vsubsd xmm2, xmm2, xmm3
+            sub r9, 1
+            mov rax, 0
+            vcvtsi2sd xmm1, xmm1, rax
+            vcomisd xmm3, xmm1
+            jnz .Loop
+            
+            
+        pos:
+            vaddsd xmm2, xmm2, xmm3
+            add r9, 1
+            mov rax, 0
+            vcvtsi2sd xmm1, xmm1, rax
+            vcomisd xmm3, xmm1
+            jnz .Loop
+    
+    movsd xmm0, xmm2
+    
+
+    ret
