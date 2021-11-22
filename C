@@ -1,0 +1,62 @@
+#include <immintrin.h>
+#include <stddef.h>
+#include <stdlib.h>
+
+void vmul(int N, double* A, double* B, double* C)
+{
+    int x, i, j;
+    if (N < 4) {
+        for (i = 0; i < N; i++) {
+            A[i] += B[i] * C[i];
+        }
+    } else {
+        x = N - 4;
+        for (i = x; i >= 0; i -= 4) {
+            __m256d t1 = _mm256_loadu_pd(A + 8 * i);
+            __m256d t2 = _mm256_loadu_pd(B + 8 * i);
+            __m256d t3 = _mm256_loadu_pd(C + 8 * i);
+            __m256d mn = _mm256_mul_pd(t2, t3);
+            __m256d t4 = _mm256_add_pd(t1, mn);
+            _mm256_storeu_pd(A + 8 * i, t4);
+        }
+        x = N % 4;
+        for (i = 0; i < x; i++) {
+            A[i] += B[i] * C[i];
+        }
+    }
+}
+
+int main(void)
+{
+
+    int i, j, k, n, row;
+    scanf("%d", &n);
+    double* tot = malloc(n * sizeof(double));
+    double** M = malloc(n * sizeof(double*));
+    double* TEMP = malloc((n + 1) * sizeof(double));
+    for (i = 0; i < n; i++)
+        M[i] = malloc((n + 1) * sizeof(double));
+
+    for (i = 0; i < n; i++)
+        for (j = 0; j < n + 1; j++)
+            scanf("%lf", &M[i][j]);
+
+    for (k = 0; k < n; k++) {
+
+        for (i = 0; i < n; i++)
+            if (i != k) {
+                double c = -(M[i][k] / M[k][k]);
+                int l;
+                for (l = 0; l < n + 1; l++)
+                    TEMP[l] = c;
+                vmul(n + 1, M[i], M[k], TEMP);
+            }
+    }
+
+    for (i = 0; i < n; i++)
+        tot[i] = M[i][n] / M[i][i];
+
+    for (i = 0; i < n; i++)
+        printf("%lf\n", tot[i]);
+    return (0);
+}
