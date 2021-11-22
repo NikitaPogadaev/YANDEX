@@ -1,0 +1,57 @@
+#I!/usr/bin/bash
+
+function gauss_method() {
+        local matrix=$1
+        IFS=$'\n'
+        MTR=()
+        CO=0
+        N=0
+        for item in $(echo "$matrix")
+        do
+                N=$(($N+1))
+                local IFS=,
+                for num in $item
+                do
+                        MTR[$CO]=$num
+                        CO=$(($CO+1))
+                done
+        done
+	M=$(($N+1))
+        ans=()
+        place=()
+	for (( i=0; i<$(($N+1)); i++ ))  
+	do
+		place[$i]=-1
+		ans[$i]=0
+	done
+        col=0
+        row=0
+	while [ $row -lt $N ]
+        do
+			for (( j=0; j<$N; j++ ))
+			do
+				if [ ! $j -eq $row ]
+				then	
+					c=$(echo ${MTR[$(($j*$M+$col))]}'/'${MTR[$(($row*$M+$col))]} | bc -l)
+					for (( g=$col; g<$M; g++ ))
+					do
+						temp=$(echo ${MTR[$(($row*$M+$g))]}'*'$c | bc -l)
+						MTR[$(($j*$M+$g))]=$(echo ${MTR[$(($j*$M+$g))]}'-'\($temp\) | bc -l)
+					done
+				fi
+			done
+                col=$(($col+1))
+                row=$(($row+1))
+	done
+	for (( i=0; i<$N; i++ )) 
+	do
+		tit=$(echo ${MTR[$(($i*$M+$N))]}'/'${MTR[$(($i*$M+$i))]} | bc -l)
+		echo $tit
+	done
+}
+
+filename=$1
+
+
+task_content=$(cat "$filename")
+echo "$(gauss_method "$task_content")"
