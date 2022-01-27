@@ -1,0 +1,1007 @@
+#include <set>
+#include <iostream>
+#include <vector>
+#include <cmath>
+#include <algorithm>
+#include "biginteger.h"
+
+using namespace std;
+const double Pi = asin(1) * 2;
+const double INF = 1'000'000'000'000;
+const double mal = 1 / pow(10, 5); 
+const double EPS = 1E-9;
+
+
+int GAUSS(vector < vector<Field> > a, vector<Field>& ans) {
+    int n = (int)a.size();
+    int m = (int)a[0].size() - 1;
+    Field nul = 0;
+    vector<int> where(m, -1);
+    for (int col = 0, row = 0; col < m && row < n; ++col) {
+        int sel = row;
+        for (int i = row; i < n; ++i)
+            if (a[i][col] > a[sel][col])
+                sel = i;
+        if (a[sel][col]==nul)
+            continue;
+        for (int i = col; i <= m; ++i)
+            swap(a[sel][i], a[row][i]);
+        where[col] = row;
+
+        for (int i = 0; i < n; ++i)
+            if (i != row) {
+                Field c = a[i][col] / a[row][col];
+                for (int j = col; j <= m; ++j)
+                    a[i][j] -= a[row][j] * c;
+            }
+        ++row;
+    }
+
+    for (int i = 0; i < n; i++) {
+        cout << endl;
+        for (int j = 0; j < n; j++)
+            cout << a[i][j] << " ";
+    }
+
+    ans.assign(m, 0);
+    for (int i = 0; i < m; ++i)
+        if (where[i] != -1)
+            ans[i] = a[where[i]][m] / a[where[i]][i];
+    for (int i = 0; i < n; ++i) {
+        Field sum = 0;
+        for (int j = 0; j < m; ++j)
+            sum += ans[j] * a[i][j];
+        if (sum - a[i][m]==nul)
+            return 0;
+    }
+
+    for (int i = 0; i < m; ++i)
+        if (where[i] == -1)
+            return INF;
+    return 1;
+}
+
+
+int advanced_gcd(int a, int b, int& x, int& y) {
+    if (a == 0) {
+        x = 0; y = 1;
+        return b;
+    }
+    int x1, y1;
+    int GCD = advanced_gcd(b % a, a, x1, y1);
+    x = y1 - (b / a) * x1;
+    y = x1;
+    return GCD;
+}
+
+
+
+
+
+template<int N>
+class Finite {
+public:
+    int value;
+public:
+    Finite<N>(int x) {
+        value = ((x % N) + N) % N;
+    }
+    Finite<N>() {
+        value = 0;
+    }
+    explicit operator double() {
+        double k = 0;
+        k = value;
+        return k;
+    }
+    operator int() {
+        int k = 0;
+        k = value;
+        return k;
+    }
+    Finite<N>& operator=(int x) {
+        value = ((x % N) + N) % N;
+        return *this;
+    }
+    Finite<N>& operator=(Finite<N> x) {
+        value = x.value;
+        return *this;
+    }
+    Finite<N>& operator+=(const  Finite<N>& x) {
+        Finite<N> temp = *this;
+        temp.value = ((this->value + x.value) % N + N) % N;
+        *this = temp;
+        return *this;
+    }
+    Finite<N>& operator++() {
+        Finite<N> temp = *this;
+        temp.value = ((this->value + 1) % N + N) % N;
+        *this = temp;
+        return *this;
+    }
+    Finite<N>& operator-=(const  Finite<N>& x) {
+        Finite<N> temp = *this;
+        temp.value = ((this->value - x.value) % N + N) % N;
+        *this = temp;
+        return *this;
+    }
+    Finite<N>& operator--() {
+        Finite<N> temp = *this;
+        temp.value = ((this->value - 1) % N + N) % N;
+        *this = temp;
+        return *this;
+    }
+    Finite<N>& operator*=(const  Finite<N>& x) {
+        Finite<N> temp = *this;
+        temp.value = ((this->value * x.value) % N + N) % N;
+        *this = temp;
+        return *this;
+    }
+    Finite<N>& operator-() {
+        value = ((-value) % N + N) % N;
+        return *this;
+    }
+    Finite<N>& operator/=(const  Finite<N>& x) {
+        int x1, y1;
+        int temp;
+        advanced_gcd(x.value, N, x1, y1);
+        temp = ((this->value * x1) % N + N) % N;
+        this->value = temp;
+        return *this;
+    }
+    friend std::ostream& operator <<(std::ostream& out, const Finite<N>& s) {
+        out << s.value;
+        return out;
+    }
+    friend std::istream& operator >>(std::istream& in, Finite<N>& s) {
+        in >> s.value;
+        return in;
+    }
+
+    template<int N>
+    friend bool operator==(const Finite<N>&, const Finite<N>&);
+    template<int N>
+    friend bool operator!=(const Finite<N>&, const Finite<N>&);
+    template<int N>
+    friend bool operator<=(const Finite<N>&, const Finite<N>&);
+    template<int N>
+    friend bool operator>=(const Finite<N>&, const Finite<N>&);
+    template<int N>
+    friend bool operator<(const Finite<N>&, const Finite<N>&);
+    template<int N>
+    friend bool operator>(const Finite<N>&, const Finite<N>&);
+
+};
+
+template<int N>
+Finite<N> abs(Finite<N>& a) {
+    return a;
+}
+
+template<int N>
+bool operator==(const Finite<N>& x, const Finite<N>& y) {
+    return x.value == y.value;
+}
+template<int N>
+bool operator!=(const Finite<N>& x, const Finite<N>& y) {
+    return x.value != y.value;
+
+}
+template<int N>
+bool operator<=(const Finite<N>& x, const Finite<N>& y) {
+    return x.value <= y.value;
+
+}
+template<int N>
+bool operator>=(const Finite<N>& x, const Finite<N>& y) {
+    return x.value >= y.value;
+
+}
+template<int N>
+bool operator<(const Finite<N>& x, const Finite<N>& y) {
+    return x.value < y.value;
+
+}
+template<int N>
+bool operator>(const Finite<N>& x, const Finite<N>& y) {
+    return x.value > y.value;
+
+}
+
+
+
+
+template<int N>
+Finite<N> operator+(const Finite<N>& a, const Finite<N>& b) {
+    Finite<N> temp = a;
+    temp += b;
+    return temp;
+}
+template<int N>
+Finite<N> operator-(const Finite<N>& a, const Finite<N>& b) {
+    Finite<N> temp = a;
+    temp -= b;
+    return temp;
+}
+template<int N>
+Finite<N> operator*(const Finite<N>& a, const Finite<N>& b) {
+    Finite<N> temp = a;
+    temp *= b;
+    return temp;
+}
+template<int N>
+Finite<N> operator/(const Finite<N>& a, const Finite<N>& b) {
+    Finite<N> temp = a;
+    temp /= b;
+    return temp;
+}
+
+
+//
+///
+///
+///
+//
+//
+///
+//
+
+
+
+
+
+
+
+bool equal(const double& a, const double& b) {
+    return abs(a - b) < mal;
+}
+
+template <typename U, typename V>
+struct is_sam {
+    static const bool value = false;
+};
+
+template <typename U>
+struct is_sam<U, U> {
+    static const bool value = true;
+};
+
+
+Rational abs(Rational& a) {
+    if (a < 0) {
+        return(0 - a);
+    }
+    return a;
+}
+
+double DET_double(vector < vector<double> >& a, unsigned n) {
+    double det = 1;
+    for (unsigned i = 0; i < n; ++i) {
+        unsigned k = i;
+        for (unsigned j = i + 1; j < n; ++j)
+            if (abs(a[j][i]) > abs(a[k][i]))
+                k = j;
+        if (abs(a[k][i]) < EPS) {
+            det = 0;
+            break;
+        }
+        swap(a[i], a[k]);
+        if (i != k)
+            det = -det;
+        det *= a[i][i];
+        for (unsigned j = i + 1; j < n; ++j)
+            a[i][j] /= a[i][i];
+        for (unsigned j = 0; j < n; ++j)
+            if (j != i && abs(a[j][i]) > EPS)
+                for (unsigned k = i + 1; k < n; ++k)
+                    a[j][k] -= a[i][k] * a[j][i];
+    }
+    return det;
+}
+template<typename Field = Rational>
+Field DET_Rational(vector < vector<Field> >& a, unsigned n) {
+    Field det = 1;
+    for (unsigned i = 0; i < n; ++i) {
+        unsigned k = i;
+        for (unsigned j = i + 1; j < n; ++j)
+            if (abs(a[j][i]) > abs(a[k][i]))
+                k = j;
+        if (a[k][i] == 0) {
+            det = 0;
+            break;
+        }
+        swap(a[i], a[k]);
+        if (i != k)
+            det = -det;
+        det *= a[i][i];
+        for (unsigned j = i + 1; j < n; ++j)
+            a[i][j] /= a[i][i];
+        for (unsigned j = 0; j < n; ++j)
+            if (j != i && (a[j][i] != 0))
+                for (unsigned k = i + 1; k < n; ++k)
+                    a[j][k] -= a[i][k] * a[j][i];
+    }
+
+    return det;
+}
+unsigned RK_double(vector < vector<double> >& a, unsigned n, unsigned m) {
+    unsigned rank = max(n, m);
+    vector<char> line_used(n);
+    for (unsigned i = 0; i < m; ++i) {
+        unsigned j;
+        for (j = 0; j < n; ++j)
+            if (!line_used[j] && abs(a[j][i]) > EPS)
+                break;
+        if (j == n)
+            --rank;
+        else {
+            line_used[j] = true;
+            for (unsigned p = i + 1; p < m; ++p)
+                a[j][p] /= a[j][i];
+            for (unsigned k = 0; k < n; ++k)
+                if (k != j && abs(a[k][i]) > EPS)
+                    for (unsigned p = i + 1; p < m; ++p)
+                        a[k][p] -= a[j][p] * a[k][i];
+        }
+    }
+    return rank;
+}
+template<typename Field = Rational>
+unsigned RK_Rational(vector < vector<Field> >& a, unsigned n, unsigned m) {
+    unsigned rank = max(n, m);
+    vector<char> line_used(n);
+    for (unsigned i = 0; i < m; ++i) {
+        unsigned j;
+        for (j = 0; j < n; ++j)
+            if (!line_used[j] && a[j][i] !=0)
+                break;
+        if (j == n)
+            --rank;
+        else {
+            line_used[j] = true;
+            for (unsigned p = i + 1; p < m; ++p)
+                a[j][p] /= a[j][i];
+            for (unsigned k = 0; k < n; ++k)
+                if (k != j && a[k][i] !=0)
+                    for (unsigned p = i + 1; p < m; ++p)
+                        a[k][p] -= a[j][p] * a[k][i];
+        }
+    }
+    return rank;
+}
+template<typename Field>
+void inversion(vector < vector<Field> >& A, unsigned N)
+{
+    Field temp;
+
+    vector < vector<Field> > E(N, vector <Field>(N));;
+
+    Field nul = 0, ed = 1;
+    for (unsigned i = 0; i < N; i++)
+        for (unsigned j = 0; j < N; j++)
+        {
+            E[i][j] = nul;
+
+            if (i == j)
+                E[i][j] = ed;
+        }
+
+    for (unsigned k = 0; k < N; k++)
+    {
+        for (unsigned i = k; i < N; i++) {
+            if (A[i][k] != nul) {
+                swap(A[k], A[i]);
+                i = N;
+            }
+        }
+
+        temp = A[k][k];
+
+        for (unsigned j = 0; j < N; j++)
+        {
+            A[k][j] /= temp;
+            E[k][j] /= temp;
+        }
+
+        for (unsigned i = k + 1; i < N; i++)
+        {
+            temp = A[i][k];
+
+            for (unsigned j = 0; j < N; j++)
+            {
+                A[i][j] -= A[k][j] * temp;
+                E[i][j] -= E[k][j] * temp;
+            }
+        }
+    }
+
+    for (unsigned k = N - 1; k > 0; k--)
+    {
+        for (unsigned i = 0; i < k; i++)
+        {
+            i = k - 1 - i;
+            temp = A[i][k];
+
+            for (int j = 0; j < N; j++)
+            {
+                A[i][j] -= A[k][j] * temp;
+                E[i][j] -= E[k][j] * temp;
+            }
+        }
+    }
+
+    for (unsigned i = 0; i < N; i++)
+        for (unsigned j = 0; j < N; j++)
+            A[i][j] = E[i][j];
+
+}
+//
+//
+//
+//
+//
+///
+//
+
+template<unsigned N, unsigned M, typename Field = Rational>
+class Matrix {
+    vector <vector <Field>> MTR;
+public:
+    Matrix<N, M, Field>(vector <vector <Field>> m) {
+        MTR = m;
+    }
+    vector <Field>& operator [](unsigned i) {
+        return MTR[i];
+    }
+    const vector <Field>& operator [](unsigned i)const {
+        const vector <Field>& temp = MTR[i];
+        return temp;
+    }
+    Matrix<N, M, Field>operator=(const vector <vector <Field>>& m) {
+        MTR = m;
+        return *this;
+    }
+    Matrix<N, M, Field>operator=(const Matrix<N, M, Field>& m) {
+        for (unsigned i = 0; i < N; i++)
+            for (unsigned j = 0; j < M; j++)
+                MTR[i][j] = m[i][j];
+        return *this;
+    }
+    template<unsigned N, unsigned M, typename Field /*= Rational*/>
+    friend bool operator==(const  Matrix<N, M, Field>&, const  Matrix<N, M, Field>&);
+    template<unsigned N, unsigned M, typename Field /*= Rational*/>
+    friend bool operator!=(const  Matrix<N, M, Field>&, const  Matrix<N, M, Field>&);
+    template<unsigned N, unsigned M, typename Field /*= Rational*/>
+    friend Matrix<N, M, Field> operator+(const  Matrix<N, M, Field>&, const  Matrix<N, M, Field>&);
+    template<unsigned N, unsigned M, typename Field /*= Rational*/>
+    friend Matrix<N, M, Field> operator-(const  Matrix<N, M, Field>&, const  Matrix<N, M, Field>&);
+    
+    template<unsigned N, unsigned M, unsigned K, typename Field /*= Rational*/>
+    friend Matrix<N, K, Field> operator*(const  Matrix<N, M, Field>&, const  Matrix<M, K, Field>&);
+    template<unsigned N, unsigned M, typename Field /*= Rational*/>
+    friend Matrix<N, M, Field> operator*(const  Matrix<N, M, Field>&, const  Field&);
+    template<unsigned N, unsigned M, typename Field /*= Rational*/>
+    friend Matrix<N, M, Field> operator*(const  Field&, const  Matrix<N, M, Field>&);
+     Matrix<N, M, Field>& operator*=(const  Matrix<M, M, Field>& b) {
+        vector<vector<Field>>vec;
+        vector<Field>temp(M);
+        //temp.assign(M, 0);//!!!!
+        for (unsigned i = 0; i < N; i++) {
+            for (unsigned j = 0; j < M; j++) {
+                Field sum = 0;
+                for (unsigned g = 0; g < M; g++) {
+                    sum += MTR[i][g] * b[g][j];
+                }
+                temp[j] = sum;
+            }
+            vec.push_back(temp);
+        }
+        for (unsigned i = 0; i < N; i++) {
+            for (unsigned j = 0; j < M; j++) {
+                MTR[i][j] = vec[i][j];
+            }
+        }
+
+        return *this;
+    }
+     Matrix<M, N, Field> transposed() {
+         vector<vector<Field>>vec;
+         vector<Field>temp(N);
+         //temp.assign(N, 0);//!!!!
+         vec.assign(M, temp);//!!!!
+         for (unsigned i = 0; i < N; i++) {
+             for (unsigned j = 0; j < M; j++) {
+                 vec[j][i] = MTR[i][j];
+             }
+         }
+         Matrix<M, N, Field>x(vec);
+         return x;
+     }
+     Matrix<M, N, Field> transposed()const {
+         vector<vector<Field>>vec;
+         vector<Field>temp(N);
+         //temp.assign(N, 0);//!!!!
+         vec.assign(M, temp);//!!!!
+         for (unsigned i = 0; i < N; i++) {
+             for (unsigned j = 0; j < M; j++) {
+                 vec[j][i] = MTR[i][j];
+             }
+         }
+         Matrix<M, N, Field>x(vec);
+         return x;
+     }
+     vector <Field> getRow(unsigned x) {
+         vector <Field> temp = MTR[x];
+         return temp;
+     }
+     vector <Field> getRow(unsigned x)const {
+         vector <Field> temp = MTR[x];
+         return temp;
+     }
+     vector <Field> getColumn(unsigned x) {
+         vector <Field> temp;
+         for (unsigned i = 0; i < N; i++) {
+             temp.push_back[i][x];
+         }
+         return temp;
+     }
+     vector <Field> getColumn(unsigned x)const {
+         vector <Field> temp;
+         for (unsigned i = 0; i < N; i++) {
+             temp.push_back[i][x];
+         }
+         return temp;
+     }
+
+
+    Matrix<N, M, Field>& operator+=(const  Matrix<N, M, Field>& x) {
+        for (unsigned i = 0; i < N; i++) {
+            for (unsigned j = 0; j < M; j++) {
+                MTR[i][j] += x[i][j];
+            }
+        }
+        return *this;
+    }
+    Matrix<N, M, Field>& operator-=(const  Matrix<N, M, Field>& x) {
+        for (unsigned i = 0; i < N; i++) {
+            for (unsigned j = 0; j < M; j++) {
+                MTR[i][j] -= x[i][j];
+            }
+        }
+        return *this;
+    }
+    Matrix<N, M, Field>& operator*=(const Field& x) {
+        for (unsigned i = 0; i < N; i++) {
+            for (unsigned j = 0; j < M; j++) {
+                MTR[i][j] *= x;
+            }
+        }
+        return *this;
+    }
+    unsigned rank() {
+        if (is_sam<Field, Rational>::value == false) {
+            vector < vector < double>> temp(N, vector <double>(M));
+            for (unsigned i = 0; i < N; i++) {
+                for (unsigned j = 0; j < M; j++) {
+                    double t = double(MTR[i][j]);
+                    temp[i][j] = t;
+                }
+            }
+            unsigned d = RK_double(temp, N, M);
+            return d;
+        }
+        else {
+            vector<vector<Field>>temp = MTR;
+            return RK_Rational(temp, N, M);
+        }
+
+    }
+    unsigned rank()const {
+        if (is_sam<Field, Rational>::value == false) {
+            vector < vector < double>> temp(N, vector <double>(M));
+            for (unsigned i = 0; i < N; i++) {
+                for (unsigned j = 0; j < M; j++) {
+                    double t = double(MTR[i][j]);
+                    temp[i][j] = t;
+                }
+            }
+            unsigned d = RK_double(temp, N, M);
+            return d;
+        }
+        else {
+            vector<vector<Field>>temp = MTR;
+            return RK_Rational(temp, N, M);
+        }
+
+    }
+};
+
+template<unsigned N, unsigned M, typename Field = Rational>
+bool operator==(const  Matrix<N, M, Field>& a, const  Matrix<N, M, Field>& b) {
+    for (unsigned i = 0; i < N; i++) {
+        for (unsigned j = 0; j < M; j++) {
+            if (a.MTR[i][j] != b.MTR[i][j])return false;
+        }
+    }
+    return true;
+}
+template<unsigned N, unsigned M, typename Field = Rational>
+bool operator!=(const  Matrix<N, M, Field>& a, const  Matrix<N, M, Field>& b) {
+    return !(a == b);
+}
+
+template<unsigned N, unsigned M, typename Field = Rational>
+Matrix<N, M, Field> operator+(const Matrix<N, M, Field>& a, const Matrix<N, M, Field>& b) {
+    Matrix<N, M, Field> temp(a.MTR);
+    temp += b;
+    return temp;
+}
+template<unsigned N, unsigned M, typename Field = Rational>
+Matrix<N, M, Field> operator-(const Matrix<N, M, Field>& a, const Matrix<N, M, Field>& b) {
+    Matrix<N, M, Field> temp(a.MTR);
+    temp -= b;
+    return temp;
+}
+template<unsigned N, unsigned M, typename Field = Rational>
+Matrix<N, M, Field> operator*(const Matrix<N, M, Field>& a, const Field& b) {
+    Matrix<N, M, Field> temp(a.MTR);
+    temp *= b;
+    return temp;
+}
+template<unsigned N, unsigned M, typename Field = Rational>
+Matrix<N, M, Field> operator*( const Field& b, const Matrix<N, M, Field>& a) {
+    Matrix<N, M, Field> temp(a.MTR);
+    temp *= b;
+    return temp;
+}
+template<unsigned N, unsigned M, unsigned K, typename Field = Rational>
+Matrix<N, K, Field> operator*(const Matrix<N, M, Field>& a, const Matrix<M, K, Field>& b) {
+    vector<vector<Field>>vec;
+    vector<Field>temp(K);
+    //temp.assign(K, 0);//!!!!
+    for (unsigned i = 0; i < N; i++) {
+        for (unsigned j = 0; j < K; j++) {
+            Field sum = 0;
+            for (unsigned g = 0; g < M; g++) {
+                sum += a.MTR[i][g] * b.MTR[g][j];
+            }
+            temp[j] = sum;
+        }
+        vec.push_back(temp);
+    }
+
+
+    Matrix<N, K, Field> tuc(vec);
+    return tuc;
+}
+
+
+
+
+
+
+
+
+
+
+
+
+//
+//
+//
+//
+//
+//
+//
+//
+template<unsigned N, typename Field>
+class Matrix<N, N, Field> {
+    vector <vector <Field>> MTR;
+public:
+    Matrix<N, N, Field>() {
+        vector <Field> temp(N);
+        //temp.assign(N, 0);
+        unsigned k = 0;
+        for (unsigned i = 0; i < N; i++) {
+            if (k >= 1)temp[k - 1] = 0;
+            temp[k] = 1;
+            MTR.push_back(temp);
+            k++;
+        }
+    }
+    Matrix<N, N, Field>(vector <vector <Field>> m) {
+        MTR = m;
+    }
+    vector <Field>& operator [](unsigned i) {
+        return MTR[i];
+    }
+    const vector <Field>& operator [](unsigned i)const {
+        const vector <Field>& temp = MTR[i];
+        return temp;
+    }
+    Matrix<N, N, Field>operator=(const vector <vector <Field>>& m) {
+        MTR = m;
+        return *this;
+    }
+    Matrix<N, N, Field>operator=(const Matrix<N, N, Field>& m) {
+        for (unsigned i = 0; i < N; i++)
+            for (unsigned j = 0; j < N; j++)
+                MTR[i][j] = m[i][j];
+        return *this;
+    }
+    template<unsigned N, typename Field /*= Rational*/>
+    friend bool operator==(const  Matrix<N, N, Field>&, const  Matrix<N, N, Field>&);
+    template<unsigned N, typename Field /*= Rational*/>
+    friend bool operator!=(const  Matrix<N, N, Field>&, const  Matrix<N, N, Field>&);
+    template<unsigned N, typename Field /*= Rational*/>
+    friend Matrix<N, N, Field> operator+(const  Matrix<N, N, Field>&, const  Matrix<N, N, Field>&);
+    template<unsigned N, typename Field /*= Rational*/>
+    friend Matrix<N, N, Field> operator-(const  Matrix<N, N, Field>&, const  Matrix<N, N, Field>&);
+    
+    template<unsigned N, unsigned K, typename Field /*= Rational*/>
+    friend Matrix<N, K, Field> operator*(const  Matrix<N, N, Field>&, const  Matrix<N, K, Field>&);
+    template<unsigned N, typename Field /*= Rational*/>
+    friend Matrix<N, N, Field> operator*(const  Matrix<N, N, Field>&, const  Field&);
+    template<unsigned N,  typename Field /*= Rational*/>
+    friend Matrix<N, N, Field> operator*(const  Field&, const  Matrix<N, N, Field>&);
+    Matrix<N, N, Field>& operator*=(const  Matrix<N, N, Field>& b) {
+        vector<vector<Field>>vec;
+        vector<Field>temp(N);
+        //temp.assign(N, 0);//!!!!
+        for (unsigned i = 0; i < N; i++) {
+            for (unsigned j = 0; j < N; j++) {
+                Field sum = 0;
+                for (int g = 0; g < N; g++) {
+                    sum += MTR[i][g] * b[g][j];
+                }
+                temp[j] = sum;
+            }
+            vec.push_back(temp);
+        }
+        for (unsigned i = 0; i < N; i++) {
+            for (unsigned j = 0; j < N; j++) {
+                MTR[i][j] = vec[i][j];
+            }
+        }
+
+        return *this;
+    }
+    Matrix<N, N, Field> transposed() {
+        vector<vector<Field>>vec;
+        vector<Field>temp(N);
+        //temp.assign(N, 0);//!!!!
+        vec.assign(N, temp);//!!!!
+        for (unsigned i = 0; i < N; i++) {
+            for (unsigned j = 0; j < N; j++) {
+                vec[j][i] = MTR[i][j];
+            }
+        }
+        Matrix<N, N, Field>x(vec);
+        return x;
+    }
+    Matrix<N, N, Field> transposed()const {
+        vector<vector<Field>>vec;
+        vector<Field>temp(N);
+        //temp.assign(N, 0);//!!!!
+        vec.assign(N, temp);//!!!!
+        for (unsigned i = 0; i < N; i++) {
+            for (unsigned j = 0; j < N; j++) {
+                vec[j][i] = MTR[i][j];
+            }
+        }
+        Matrix<N, N, Field>x(vec);
+        return x;
+    }
+    Field trace() {
+        Field sum = 0;
+        for (unsigned i = 0; i < N; i++)sum += MTR[i][i];
+        return sum;
+    }
+    Field trace()const {
+        Field sum = 0;
+        for (unsigned i = 0; i < N; i++)sum += MTR[i][i];
+        return sum;
+    }
+    vector <Field> getRow(unsigned x) {
+        vector <Field> temp = MTR[x];
+        return temp;
+    }
+    vector <Field> getRow(unsigned x)const {
+        vector <Field> temp = MTR[x];
+        return temp;
+    }
+    vector <Field> getColumn(unsigned x) {
+        vector <Field> temp;
+        for (unsigned i = 0; i < N; i++) {
+            temp.push_back[i][x];
+        }
+        return temp;
+    }
+    vector <Field> getColumn(unsigned x)const {
+        vector <Field> temp;
+        for (unsigned i = 0; i < N; i++) {
+            temp.push_back[i][x];
+        }
+        return temp;
+    }
+
+
+    Matrix<N, N, Field>& operator+=(const  Matrix<N, N, Field>& x) {
+        for (int i = 0; i < N; i++) {
+            for (int j = 0; j < N; j++) {
+                MTR[i][j] += x[i][j];
+            }
+        }
+        return *this;
+    }
+    Matrix<N, N, Field>& operator-=(const  Matrix<N, N, Field>& x) {
+        for (int i = 0; i < N; i++) {
+            for (int j = 0; j < N; j++) {
+                MTR[i][j] -= x[i][j];
+            }
+        }
+        return *this;
+    }
+    Matrix<N, N, Field>& operator*=(const  Field& x) {
+        for (int i = 0; i < N; i++) {
+            for (int j = 0; j < N; j++) {
+                MTR[i][j] *= x;
+            }
+        }
+        return *this;
+    }
+
+
+    Field det() {
+        if (is_sam<Field, Rational>::value == false) {
+            vector < vector < double>> temp(N, vector <double>(N));
+            for (unsigned i = 0; i < N; i++) {
+                for (unsigned j = 0; j < N; j++) {
+                    double t = double(MTR[i][j]);
+                    temp[i][j] = t;
+                }
+            }
+            double d = DET_double(temp, N);
+            return d;
+        }
+        else {
+            vector<vector<Field>>temp = MTR;
+            return DET_Rational(temp, N);
+        }
+
+    }
+    Field det()const {
+        if (is_sam<Field, Rational>::value == false) {
+            vector < vector < double>> temp(N, vector <double>(N));
+            for (unsigned i = 0; i < N; i++) {
+                for (unsigned j = 0; j < N; j++) {
+                    double t = double(MTR[i][j]);
+                    temp[i][j] = t;
+                }
+            }
+            double d = DET_double(temp, N);
+            return d;
+        }
+        else {
+            vector<vector<Field>>temp = MTR;
+            return DET_Rational(temp, N);
+        }
+
+    }
+    unsigned rank() {
+        if (is_sam<Field, Rational>::value == false) {
+            vector < vector < double>> temp(N, vector <double>(N));
+            for (unsigned i = 0; i < N; i++) {
+                for (unsigned j = 0; j < N; j++) {
+                    double t = double(MTR[i][j]);
+                    temp[i][j] = t;
+                }
+            }
+            unsigned d = RK_double(temp, N, N);
+            return d;
+        }
+        else {
+            vector<vector<Field>>temp = MTR;
+            return RK_Rational(temp, N, N);
+        }
+
+    }
+    unsigned rank()const {
+        if (is_sam<Field, Rational>::value == false) {
+            vector < vector < double>> temp(N, vector <double>(N));
+            for (unsigned i = 0; i < N; i++) {
+                for (unsigned j = 0; j < N; j++) {
+                    double t = double(MTR[i][j]);
+                    temp[i][j] = t;
+                }
+            }
+            unsigned d = RK_double(temp, N, N);
+            return d;
+        }
+        else {
+            vector<vector<Field>>temp = MTR;
+            return RK_Rational(temp, N, N);
+        }
+
+    }
+    Matrix<N, N, Field>& invert() {
+        Field temp(0);
+        if (this->det() != 0) {
+            inversion(MTR, N);
+        }
+        return *this;
+    }
+    Matrix<N, N, Field>& inverted() {
+        vector<vector<Field>>temp = MTR;
+        if (this->det() != 0) {
+            inversion(MTR, N);
+        }
+        Matrix<N, N, Field>m(temp);
+        return m;
+    }
+
+};
+template<unsigned N, typename Field = Rational>
+bool operator==(const  Matrix<N, N, Field>& a, const  Matrix<N, N, Field>& b) {
+    for (int i = 0; i < N; i++) {
+        for (int j = 0; j < N; j++) {
+            if (a.MTR[i][j] != b.MTR[i][j])return false;
+        }
+    }
+    return true;
+}
+template<unsigned N,  typename Field = Rational>
+bool operator!=(const  Matrix<N, N, Field>& a, const  Matrix<N, N, Field>& b) {
+    return !(a == b);
+}
+template<unsigned N, typename Field = Rational>
+Matrix<N, N, Field> operator+(const Matrix<N, N, Field>& a, const Matrix<N, N, Field>& b) {
+    Matrix<N, N, Field> temp(a.MTR);
+    temp += b;
+    return temp;
+}
+template<unsigned N,typename Field = Rational>
+Matrix<N, N, Field> operator-(const Matrix<N, N, Field>& a, const Matrix<N, N, Field>& b) {
+    Matrix<N, N, Field> temp(a.MTR);
+    temp -= b;
+    return temp;
+}
+template<unsigned N, typename Field = Rational>
+Matrix<N, N, Field> operator*(const Matrix<N, N, Field>& a, const Field& b) {
+    Matrix<N, N, Field> temp(a.MTR);
+    temp *= b;
+    return temp;
+}
+template<unsigned N, typename Field = Rational>
+Matrix<N, N, Field> operator*(const Field& b, const Matrix<N, N, Field>& a) {
+    Matrix<N, N, Field> temp(a.MTR);
+    temp *= b;
+    return temp;
+}
+template<unsigned N, unsigned K, typename Field = Rational>
+Matrix<N, K, Field> operator*(const Matrix<N, N, Field>& a, const Matrix<N, K, Field>& b) {
+    vector<vector<Field>>vec;
+    vector<Field>temp(K);
+    //temp.assign(K, 0);//!!!!
+    for (int i = 0; i < N; i++) {
+        for (int j = 0; j < K; j++) {
+            Field sum = 0;
+            for (int g = 0; g < N; g++) {
+                sum += a.MTR[i][g] * b.MTR[g][j];
+            }
+            temp[j] = sum;
+        }
+        vec.push_back(temp);
+    }
+
+
+    Matrix<N, K, Field> tuc(vec);
+    return tuc;
+}
+
+/*template<unsigned N>;
+void SquareMatrix() {
+    cout << N;
+}*/
+template<unsigned N, typename Field = Rational>
+using SquareMatrix = Matrix<N, N, Field>;
